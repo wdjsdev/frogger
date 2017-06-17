@@ -104,22 +104,22 @@ window.onload = function()
 
 		for(var c = 0; c < 4; c++)
 		{
-			cars.push(new MovingObject((grid * 3) * c,row1,grid,grid,-med,"blue","car"));
+			cars.push(new MovingObject((grid * 3) * c,row1,grid,grid,-med,"blue"));
 		}
 
 		var row2 = height - grid * 3;
 		for(var c = 0; c< 2; c++)
 		{
-			cars.push(new MovingObject((grid * 6) * c, row2, grid*3, grid, fast, "yellow","car"));
+			cars.push(new MovingObject((grid * 6) * c, row2, grid*3, grid, fast, "yellow"));
 		}
 
 		var row3 = height - grid * 4;
-		cars.push(new MovingObject(-grid,row3,grid,grid,superFast,"red","car"));
+		cars.push(new MovingObject(-grid,row3,grid,grid,superFast,"red"));
 
 		var row4 = height - grid * 5;
 		for(var c=0;c< 2;c++)
 		{
-			cars.push(new MovingObject((grid * 8)*c, row4, grid * 4, grid, slow, "purple","car"));
+			cars.push(new MovingObject((grid * 8)*c, row4, grid * 4, grid, slow, "purple"));
 		}
 	}
 
@@ -129,7 +129,7 @@ window.onload = function()
 		var row5 = height - grid * 7;
 		for(var l=0;l<2;l++)
 		{
-			logs.push(new MovingObject(grid * l * 5, row5, grid * 5, grid, med, "brown"));
+			logs.push(new MovingObject(grid * l * 5, row5, grid * 3, grid, med, "brown"));
 		}
 	}
 
@@ -168,7 +168,7 @@ window.onload = function()
 
 	}
 
-	function MovingObject(x,y,w,h,s,c,t)
+	function MovingObject(x,y,w,h,s,c)
 	{
 		this.x = x;
 		this.y = y;
@@ -176,7 +176,6 @@ window.onload = function()
 		this.h = h;
 		this.speed = s;
 		this.color = c;
-		this.type = t;
 
 
 		this.draw = function()
@@ -251,6 +250,12 @@ window.onload = function()
 		for(var c = 0;c<cars.length;c++)
 		{
 			cars[c].update();
+		}
+
+		//update logs
+		for(var l = 0; l<logs.length;l++)
+		{
+			logs[l].update();
 		}
 		frog.draw();
 	}
