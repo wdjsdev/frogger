@@ -72,6 +72,7 @@ window.onload = function()
 	var completedColor = "#f4427a";
 
 	var lives = 3;
+	var timer = 60;
 
 	//car speeds
 	var superFast = 7;
@@ -149,7 +150,7 @@ window.onload = function()
 		}
 
 		var row8 = height - grid * 10;
-		for(var l=0;l<1;l++)
+		for(var l=0;l<2;l++)
 		{
 			logs.push(new MovingObject(grid * l * 6, row8, grid * 5, grid, slow*1.2, "#67754c"));
 		}
@@ -264,7 +265,7 @@ window.onload = function()
 				}
 				else
 				{
-					csx = this.x + this.x % grid;
+					csx = this.x + grid - this.x % grid;
 				}
 				completedSections.push(new ColorBlock(csx,0,grid,grid,completedColor));
 				resetGame(false);
@@ -354,7 +355,8 @@ window.onload = function()
 
 	function clearCanvas()
 	{
-		ctx.clearRect(0,0,width,height);
+		ctx.clearRect(0,grid,width,grid*4);
+		ctx.clearRect(0,grid*6, width, grid * 4);
 	}
 
 	function resetGame(loseLife)
@@ -362,6 +364,7 @@ window.onload = function()
 		if(loseLife)
 		{
 			lives--;
+			updateSpeed(.9);
 			if(lives < 1)
 			{
 				alert("LOSER!");
@@ -370,6 +373,22 @@ window.onload = function()
 		}
 		frog.y = height - grid;
 		frog.x = width/2 - grid/2;
+		updateSpeed(1.1);
+
+	}
+
+	function updateSpeed(amt)
+	{
+		//loop the cars and increase their speed
+		for(var x=0;x<cars.length;x++)
+		{
+			cars[x].speed *= amt;
+		}
+		//loop the logs and increase their speed
+		for(var x=0;x<logs.length;x++)
+		{
+			logs[x].speed *= amt;
+		}
 	}
 
 	function gameLoop()
