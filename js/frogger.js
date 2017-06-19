@@ -68,12 +68,16 @@ window.onload = function()
 	var logs = [];
 	var grid = 50;
 	var safeZones = [];
+	var completedSections = [];
+	var completedColor = "#f4427a";
+
+	var lives = 3;
 
 	//car speeds
-	var superFast = 20;
-	var fast = 5;
-	var med = 4;
-	var slow = 3;	
+	var superFast = 7;
+	var fast = 3;
+	var med = 2;
+	var slow = 1;	
 
 
 	function init()
@@ -88,14 +92,14 @@ window.onload = function()
 		makeCars();
 		makeLogs();
 
-		gamePlay = setInterval(gameLoop, 100);
+		gamePlay = setInterval(gameLoop, 1000/30);
 	}
 
 	function makeSafeZones()
 	{
-		safeZones.push(new SafeZone(0, height - grid, width, grid, "gray"));
-		safeZones.push(new SafeZone(0, height - grid*6, width, grid, "gray"));
-		safeZones.push(new SafeZone(0, 0, width, grid, "gray"));
+		safeZones.push(new ColorBlock(0, height - grid, width, grid, "gray"));
+		safeZones.push(new ColorBlock(0, height - grid*6, width, grid, "gray"));
+		safeZones.push(new ColorBlock(0, 0, width, grid, "gray"));
 	}
 
 	function makeCars()
@@ -119,7 +123,7 @@ window.onload = function()
 		var row4 = height - grid * 5;
 		for(var c=0;c< 2;c++)
 		{
-			cars.push(new MovingObject((grid * 8)*c, row4, grid * 4, grid, slow, "purple"));
+			cars.push(new MovingObject((grid * 8)*c, row4, grid * 4, grid, med, "purple"));
 		}
 	}
 
@@ -129,8 +133,27 @@ window.onload = function()
 		var row5 = height - grid * 7;
 		for(var l=0;l<2;l++)
 		{
-			logs.push(new MovingObject(grid * l * 5, row5, grid * 3, grid, med, "brown"));
+			logs.push(new MovingObject(grid * l * 5, row5, grid * 3, grid, med, "#8c5104"));
 		}
+
+		var row6 = height - grid * 8;
+		for(var l=0;l<3;l++)
+		{
+			logs.push(new MovingObject(grid * l * 5, row6, grid * 3, grid, -med, "#593f0e"));
+		}
+
+		var row7 = height - grid * 9;
+		for(var l=0;l<5;l++)
+		{
+			logs.push(new MovingObject(grid * l * 3, row7, grid, grid, med, "#225128"));
+		}
+
+		var row8 = height - grid * 10;
+		for(var l=0;l<1;l++)
+		{
+			logs.push(new MovingObject(grid * l * 6, row8, grid * 5, grid, slow*1.2, "#67754c"));
+		}
+
 	}
 
 
@@ -148,11 +171,36 @@ window.onload = function()
 		this.w = w;
 		this.h = h;
 		this.color = "green";
+		this.bind = undefined;
 
 		this.draw = function()
 		{
 			ctx.fillStyle = this.color;
 			ctx.fillRect(this.x,this.y,this.w,this.h);
+		}
+		this.update = function()
+		{
+			if(this.intersectsCar())
+			{
+				resetGame(true);
+			}
+
+			if(this.inWater())
+			{
+				this.bind = this.intersectsLog()
+				if(this.bind && this.x >= -3 && this.x + this.w <= width +3)
+				{
+					this.x += this.bind.speed;
+				}
+				else if(!this.bind)
+				{
+					resetGame(true);
+				}
+			}
+
+			this.topRow();
+
+			this.draw();
 		}
 		this.move = function(moveX,moveY)
 		{
@@ -166,6 +214,75 @@ window.onload = function()
 			}
 		}
 
+		this.intersectsCar = function()
+		{
+			var squashed = false;
+
+			for(var i=cars.length-1;i>=0 && !squashed;i--)
+			{
+				var obj = cars[i];
+				if(intersect(this,obj))
+				{
+					console.log("squashed");
+					squashed = true;
+				}
+			}
+			return squashed;
+		}
+
+		this.inWater = function()
+		{
+			if(this.y >= grid && this.y < grid *5)
+				return true;
+			else
+				return false;
+		}
+
+		this.intersectsLog = function()
+		{
+			var result;
+			for(var i=logs.length-1;i>=0 && !result;i--)
+			{
+				var obj = logs[i];
+				if(intersect(this,obj))
+				{
+					result = obj;
+				}
+			}
+			return result;
+		}
+
+		this.topRow = function()
+		{
+			if(this.y == 0)
+			{	
+				var csx;
+				//get the nearest grid location
+				if(this.x % grid <= grid/2)
+				{
+					csx = this.x - this.x % grid;
+				}
+				else
+				{
+					csx = this.x + this.x % grid;
+				}
+				completedSections.push(new ColorBlock(csx,0,grid,grid,completedColor));
+				resetGame(false);
+			}
+		}
+
+	}
+
+	function intersect(frog,obj)
+	{
+		var result = false;
+		
+		if(frog.y == obj.y && ((frog.x > obj.x && frog.x < (obj.x + obj.w)) || (frog.x + frog.w > obj.x && frog.x + frog.w < obj.x + obj.w)))
+		{
+			result = true;
+		}
+		
+		return result;
 	}
 
 	function MovingObject(x,y,w,h,s,c)
@@ -186,14 +303,17 @@ window.onload = function()
 
 		this.move = function()
 		{
-			if(this.x < -grid && this.speed < 0)
+			//item is moving left and is off the canvas
+			if(this.x + this.w < -grid && this.speed < 0)
 			{
 				this.x = width + grid;
 			}
-			else if(this.x > width + grid && this.speed > 0)
+			//item is moving right and is off the canvas
+			else if(this.x - this.w > width + grid && this.speed > 0)
 			{
 				this.x = -this.w;
 			}
+			//item is moving, and is still in the middle of the canvas
 			else
 			{
 				this.x += this.speed;
@@ -209,7 +329,7 @@ window.onload = function()
 
 	}
 
-	function SafeZone(x,y,w,h,c)
+	function ColorBlock(x,y,w,h,c)
 	{
 		this.x = x;
 		this.y = y;
@@ -225,6 +345,7 @@ window.onload = function()
 	}
 
 
+
 	/*
 
 		Animation functions
@@ -234,6 +355,21 @@ window.onload = function()
 	function clearCanvas()
 	{
 		ctx.clearRect(0,0,width,height);
+	}
+
+	function resetGame(loseLife)
+	{
+		if(loseLife)
+		{
+			lives--;
+			if(lives < 1)
+			{
+				alert("LOSER!");
+				clearInterval(gamePlay);
+			}
+		}
+		frog.y = height - grid;
+		frog.x = width/2 - grid/2;
 	}
 
 	function gameLoop()
@@ -257,7 +393,15 @@ window.onload = function()
 		{
 			logs[l].update();
 		}
-		frog.draw();
+
+		//update completed sections
+		for(var cs=0;cs<completedSections.length;cs++)
+		{
+			completedSections[cs].draw();
+		}
+
+		//finally, update the frot
+		frog.update();
 	}
 
 
