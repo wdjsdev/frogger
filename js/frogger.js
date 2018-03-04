@@ -1,5 +1,6 @@
 window.onload = function()
 {
+	var vw = window.innerWidth;
 	/*
 
 		Canvas Settings
@@ -9,6 +10,8 @@ window.onload = function()
 
 	var ctx = myCanvas.getContext("2d");
 
+	// ctx.canvas.height = vw * .5;
+	// ctx.canvas.width = vw * .5;
 	ctx.canvas.height = 550;
 	ctx.canvas.width = 550;
 
@@ -67,18 +70,28 @@ window.onload = function()
 	var cars = [];
 	var logs = [];
 	var grid = 50;
+	// var grid = height/11;
 	var safeZones = [];
 	var completedSections = [];
-	var completedColor = "#f4427a";
+	
+	var livesDisplay;
 
 	var lives = 3;
+
+	var startTime = new Date();
+	var elapsedTime;
 	var timer = 60;
 
 	//car speeds
 	var superFast = 7;
 	var fast = 3;
 	var med = 2;
-	var slow = 1;	
+	var slow = 1;
+
+	//display colors
+	var completedColor = "#f4427a";
+	var livesColor = "green";
+	var waterColor = "#0179e9";
 
 
 	function init()
@@ -183,13 +196,14 @@ window.onload = function()
 		{
 			if(this.intersectsCar())
 			{
+				flashRed();
 				resetGame(true);
 			}
 
 			if(this.inWater())
 			{
 				this.bind = this.intersectsLog()
-				if(this.bind && this.x >= -3 && this.x + this.w <= width +3)
+				if(this.bind && ((this.x >= -3 && this.bind.speed < 0) || (this.x + this.w <= width +3 && this.bind.speed > 0)))
 				{
 					this.x += this.bind.speed;
 				}
@@ -359,6 +373,51 @@ window.onload = function()
 		ctx.clearRect(0,grid*6, width, grid * 4);
 	}
 
+	function drawWater()
+	{
+		ctx.fillStyle = waterColor;
+		ctx.fillRect(0,grid,width,grid*4);
+	}
+
+	function flashRed()
+	{
+		var numFrames = 5;
+		ctx.fillStyle = "red";
+		ctx.fillRect(0,0,width,height);
+		sleep(50);
+
+		function sleep(milliseconds) {
+		  var start = new Date().getTime();
+		  for (var i = 0; i < 1e7; i++) {
+		    if ((new Date().getTime() - start) > milliseconds){
+		      break;
+		    }
+		  }
+		}
+	}
+
+	function updateLives()
+	{
+		ctx.fillStyle = "white";
+		ctx.font = "15px Helvetica, sans serif";
+		livesDisplay = ctx.fillText(lives + " LIVES REMAINING", 10, height - 18);
+	}
+
+	function updateTimer()
+	{
+		elapsedTime = new Date() - startTime;
+
+		if(elapsedTime % startTime > 1000)
+		{
+			timer--;
+			elapsedTime = 0;
+		}
+
+		ctx.fillStyle = "black";
+		ctx.font = "15px Helvetica, sans serif";
+		ctx.fillText(timer, 10, grid - 10)
+	}
+
 	function resetGame(loseLife)
 	{
 		if(loseLife)
@@ -395,6 +454,8 @@ window.onload = function()
 	{
 		clearCanvas();
 
+		drawWater();
+
 		//update safeZones
 		for(var sz=0;sz<safeZones.length;sz++)
 		{
@@ -421,6 +482,9 @@ window.onload = function()
 
 		//finally, update the frot
 		frog.update();
+
+		// updateTimer();
+		updateLives();
 	}
 
 
